@@ -1,0 +1,256 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Base64 Encoder / Decoder</title>
+  <meta name="description" content="Fast, single‑file Base64 encoder and decoder with Unicode support." />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #101721;
+      --panel-2: #0e141d;
+      --text: #e8eef6;
+      --muted: #9fb3c8;
+      --accent: #4da3ff;
+      --accent-2: #69db7c;
+      --danger: #ff6b6b;
+      --border: #1f2a38;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f9fc;
+        --panel: #ffffff;
+        --panel-2: #f2f6fb;
+        --text: #0b1220;
+        --muted: #3d556c;
+        --accent: #0b63ff;
+        --accent-2: #0f9d58;
+        --danger: #d63131;
+        --border: #e3eaf2;
+        --shadow: 0 10px 30px rgba(15, 30, 50, .08);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 70% -10%, rgba(77,163,255,.12), transparent 60%),
+                  radial-gradient(900px 700px at -10% 110%, rgba(105,219,124,.10), transparent 60%),
+                  var(--bg);
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 16px 60px;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 18px;
+    }
+    .title { font-weight: 800; letter-spacing: .2px; }
+    .title span { opacity: .75; font-weight: 700; }
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.02), transparent);
+    }
+    .toolbar .spacer { flex: 1; }
+    button, .btn {
+      appearance: none; border: 1px solid var(--border); color: var(--text);
+      background: #0f1622; background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.08));
+      padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 600; letter-spacing: .2px;
+      transition: transform .06s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,.2); }
+    button:active { transform: translateY(0); }
+    .primary { border-color: color-mix(in oklab, var(--accent) 35%, var(--border)); }
+    .success { border-color: color-mix(in oklab, var(--accent-2) 35%, var(--border)); }
+    .danger { border-color: color-mix(in oklab, var(--danger) 35%, var(--border)); }
+
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 12px; }
+    @media (min-width: 880px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+    .panel {
+      display: grid; grid-template-rows: auto 1fr auto; gap: 8px;
+      padding: 12px; border: 1px dashed var(--border); border-radius: 14px; min-height: 320px;
+      background: linear-gradient(180deg, rgba(255,255,255,.01), rgba(0,0,0,.05));
+    }
+    label { font-size: 13px; color: var(--muted); }
+    textarea {
+      width: 100%; height: 280px; resize: vertical; padding: 12px; border-radius: 10px;
+      border: 1px solid var(--border); outline: none; background: #0b0f14; color: var(--text);
+    }
+    @media (prefers-color-scheme: light) {
+      textarea { background: #ffffff; }
+    }
+    .hint { font-size: 12px; color: var(--muted); }
+    .footer { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 12px 14px 0 14px; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: rgba(255,255,255,.05); padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .note { padding: 10px 14px; margin-top: 12px; border-radius: 12px; border: 1px solid var(--border); color: var(--muted); }
+    .right { text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 class="title">Base64 <span>Encoder / Decoder</span></h1>
+      <a class="btn" href="https://developer.mozilla.org/en-US/docs/Glossary/Base64" target="_blank" rel="noreferrer noopener" aria-label="Learn about Base64 on MDN">MDN ↗</a>
+    </header>
+
+    <div class="card" role="region" aria-label="Base64 utility">
+      <div class="toolbar" role="toolbar" aria-label="Actions">
+        <button id="encodeBtn" class="primary" title="Encode text to Base64 (Ctrl+E)">Encode</button>
+        <button id="decodeBtn" class="success" title="Decode Base64 to text (Ctrl+D)">Decode</button>
+        <button id="swapBtn" title="Swap input and output (Ctrl+S)">Swap</button>
+        <button id="clearBtn" class="danger" title="Clear both panes (Esc)">Clear</button>
+        <div class="spacer"></div>
+        <button id="copyOutBtn" title="Copy output (Ctrl+C)">Copy Output</button>
+        <button id="downloadBtn" title="Download output as file">Download</button>
+      </div>
+
+      <div class="grid">
+        <section class="panel" aria-labelledby="inLabel">
+          <label id="inLabel" for="input">Input</label>
+          <textarea id="input" placeholder="Type or paste text here…"></textarea>
+          <div class="hint">Tip: Works with Unicode (emoji, non‑Latin scripts). Encoding uses UTF‑8.</div>
+        </section>
+
+        <section class="panel" aria-labelledby="outLabel">
+          <label id="outLabel" for="output">Output</label>
+          <textarea id="output" placeholder="Result will appear here…"></textarea>
+          <div class="hint right">Read‑only</div>
+        </section>
+      </div>
+
+      <div class="footer">
+        <div>Keyboard: <span class="kbd">Ctrl</span>+<span class="kbd">E</span> Encode · <span class="kbd">Ctrl</span>+<span class="kbd">D</span> Decode · <span class="kbd">Ctrl</span>+<span class="kbd">S</span> Swap · <span class="kbd">Esc</span> Clear</div>
+        <div>100% client‑side · No data leaves your browser</div>
+      </div>
+    </div>
+
+    <p class="note">This tool uses <strong>UTF‑8 safe</strong> Base64 functions under the hood (TextEncoder/TextDecoder). That means your emojis 😊 and non‑Latin text are handled correctly.</p>
+  </div>
+
+  <script>
+    function bytesToBase64(bytes) {
+      let binary = "";
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+    // Convert Base64 to Uint8Array
+    function base64ToBytes(base64) {
+      const binary = atob(base64.replace(/\s+/g, ""));
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    function encodeUtf8ToBase64(str) {
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(str);
+      return bytesToBase64(bytes);
+    }
+
+    function decodeBase64ToUtf8(b64) {
+      const bytes = base64ToBytes(b64);
+      const decoder = new TextDecoder("utf-8", { fatal: false });
+      return decoder.decode(bytes);
+    }
+
+    const inputEl = document.getElementById('input');
+    const outputEl = document.getElementById('output');
+    outputEl.readOnly = false;
+
+    function encodeAction() {
+      try {
+        outputEl.value = encodeUtf8ToBase64(inputEl.value || "");
+      } catch (err) {
+        outputEl.value = `Encoding error: ${err.message}`;
+      }
+    }
+
+    function decodeAction() {
+      try {
+        outputEl.value = decodeBase64ToUtf8(inputEl.value || "");
+      } catch (err) {
+        outputEl.value = `Decoding error: ${err.message}`;
+      }
+    }
+
+    function swapAction() {
+      const a = inputEl.value;
+      inputEl.value = outputEl.value;
+      outputEl.value = a;
+      inputEl.focus();
+    }
+
+    function clearAction() {
+      inputEl.value = '';
+      outputEl.value = '';
+      inputEl.focus();
+    }
+
+    function copyOutput() {
+      if (!outputEl.value) return;
+      navigator.clipboard.writeText(outputEl.value).then(() => {
+        flash(outputEl, 'Copied!');
+      }).catch(() => {
+        outputEl.select();
+        document.execCommand('copy');
+        flash(outputEl, 'Copied!');
+      });
+    }
+
+    function downloadOutput() {
+      const blob = new Blob([outputEl.value || ''], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'base64-output.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function flash(el, msg) {
+      const oldTitle = document.title;
+      document.title = msg + ' · ' + oldTitle;
+      setTimeout(() => (document.title = oldTitle), 800);
+    }
+
+    document.getElementById('encodeBtn').addEventListener('click', encodeAction);
+    document.getElementById('decodeBtn').addEventListener('click', decodeAction);
+    document.getElementById('swapBtn').addEventListener('click', swapAction);
+    document.getElementById('clearBtn').addEventListener('click', clearAction);
+    document.getElementById('copyOutBtn').addEventListener('click', copyOutput);
+    document.getElementById('downloadBtn').addEventListener('click', downloadOutput);
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'e') { e.preventDefault(); encodeAction(); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'd') { e.preventDefault(); decodeAction(); }
+      if (e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); swapAction(); }
+      if (e.key === 'Escape') { e.preventDefault(); clearAction(); }
+    });
+    inputEl.focus();
+  </script>
+</body>
+</html>
