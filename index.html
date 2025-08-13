@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -145,6 +144,8 @@
   </div>
 
   <script>
+    // --- UTF‑8 Safe Base64 Helpers ---
+    // Convert a Uint8Array to Base64
     function bytesToBase64(bytes) {
       let binary = "";
       const len = bytes.byteLength;
@@ -176,9 +177,10 @@
       return decoder.decode(bytes);
     }
 
+    // --- UI Wiring ---
     const inputEl = document.getElementById('input');
     const outputEl = document.getElementById('output');
-    outputEl.readOnly = false;
+    outputEl.readOnly = false; // allow select & copy, but we won't sync back
 
     function encodeAction() {
       try {
@@ -238,18 +240,23 @@
       setTimeout(() => (document.title = oldTitle), 800);
     }
 
+    // Buttons
     document.getElementById('encodeBtn').addEventListener('click', encodeAction);
     document.getElementById('decodeBtn').addEventListener('click', decodeAction);
     document.getElementById('swapBtn').addEventListener('click', swapAction);
     document.getElementById('clearBtn').addEventListener('click', clearAction);
     document.getElementById('copyOutBtn').addEventListener('click', copyOutput);
     document.getElementById('downloadBtn').addEventListener('click', downloadOutput);
+
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key.toLowerCase() === 'e') { e.preventDefault(); encodeAction(); }
       if (e.ctrlKey && e.key.toLowerCase() === 'd') { e.preventDefault(); decodeAction(); }
       if (e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); swapAction(); }
       if (e.key === 'Escape') { e.preventDefault(); clearAction(); }
     });
+
+    // Autofocus
     inputEl.focus();
   </script>
 </body>
