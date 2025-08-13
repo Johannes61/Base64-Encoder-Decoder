@@ -2,262 +2,385 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Base64 Encoder / Decoder</title>
-  <meta name="description" content="Fast, single‑file Base64 encoder and decoder with Unicode support." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Super simple Base64 encoder/decoder with UTF‑8 support and a clean, minimal UI." />
   <style>
-    :root {
-      --bg: #0b0f14;
-      --panel: #101721;
-      --panel-2: #0e141d;
-      --text: #e8eef6;
-      --muted: #9fb3c8;
-      --accent: #4da3ff;
-      --accent-2: #69db7c;
-      --danger: #ff6b6b;
-      --border: #1f2a38;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-    }
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f6f9fc;
-        --panel: #ffffff;
-        --panel-2: #f2f6fb;
-        --text: #0b1220;
-        --muted: #3d556c;
-        --accent: #0b63ff;
-        --accent-2: #0f9d58;
-        --danger: #d63131;
-        --border: #e3eaf2;
-        --shadow: 0 10px 30px rgba(15, 30, 50, .08);
-      }
+    :root{
+      --bg: #0b0f16;
+      --fg: #e8eef8;
+      --muted:#a7b2c7;
+      --accent:#7aa2ff;
+      --accent-2:#8ef0d4;
+      --accent-3:#f1a7ff;
+      --ring: rgba(122,162,255,0.25);
+      --radius: 14px;
+      --gap: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     }
 
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      color: var(--text);
-      background: radial-gradient(1200px 800px at 70% -10%, rgba(77,163,255,.12), transparent 60%),
-                  radial-gradient(900px 700px at -10% 110%, rgba(105,219,124,.10), transparent 60%),
+    /* Page */
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--fg);
+      background: radial-gradient(1200px 800px at 10% 10%, rgba(122,162,255,.15), transparent 60%),
+                  radial-gradient(900px 700px at 90% 20%, rgba(142,240,212,.12), transparent 60%),
+                  radial-gradient(900px 700px at 30% 90%, rgba(241,167,255,.10), transparent 60%),
                   var(--bg);
+      letter-spacing:.2px;
     }
-    .wrap {
+
+    .wrap{
       max-width: 1100px;
       margin: 0 auto;
-      padding: 28px 16px 60px;
+      padding: 32px 20px 64px;
+      display: grid;
+      gap: 28px;
     }
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; margin-bottom: 18px;
-    }
-    .title { font-weight: 800; letter-spacing: .2px; }
-    .title span { opacity: .75; font-weight: 700; }
-    .card {
-      background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-    .toolbar {
-      display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; border-bottom: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.02), transparent);
-    }
-    .toolbar .spacer { flex: 1; }
-    button, .btn {
-      appearance: none; border: 1px solid var(--border); color: var(--text);
-      background: #0f1622; background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.08));
-      padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 600; letter-spacing: .2px;
-      transition: transform .06s ease, box-shadow .2s ease, border-color .2s ease;
-    }
-    button:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,.2); }
-    button:active { transform: translateY(0); }
-    .primary { border-color: color-mix(in oklab, var(--accent) 35%, var(--border)); }
-    .success { border-color: color-mix(in oklab, var(--accent-2) 35%, var(--border)); }
-    .danger { border-color: color-mix(in oklab, var(--danger) 35%, var(--border)); }
 
-    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 12px; }
-    @media (min-width: 880px) { .grid { grid-template-columns: 1fr 1fr; } }
+    header{
+      display:flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .title{
+      font-size: clamp(20px, 2.6vw, 30px);
+      font-weight: 700;
+      letter-spacing:.3px;
+      background: linear-gradient(90deg, var(--fg), #bcd4ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .subtitle{
+      color: var(--muted);
+      font-size: 14px;
+    }
 
-    .panel {
-      display: grid; grid-template-rows: auto 1fr auto; gap: 8px;
-      padding: 12px; border: 1px dashed var(--border); border-radius: 14px; min-height: 320px;
-      background: linear-gradient(180deg, rgba(255,255,255,.01), rgba(0,0,0,.05));
+    .panes{
+      display: grid;
+      gap: var(--gap);
+      grid-template-columns: 1fr;
     }
-    label { font-size: 13px; color: var(--muted); }
-    textarea {
-      width: 100%; height: 280px; resize: vertical; padding: 12px; border-radius: 10px;
-      border: 1px solid var(--border); outline: none; background: #0b0f14; color: var(--text);
+    @media (min-width: 940px){
+      .panes{ grid-template-columns: 1fr 1fr; }
     }
-    @media (prefers-color-scheme: light) {
-      textarea { background: #ffffff; }
+
+    .panel{
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      backdrop-filter: blur(2px);
     }
-    .hint { font-size: 12px; color: var(--muted); }
-    .footer { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 12px 14px 0 14px; }
-    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: rgba(255,255,255,.05); padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); }
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-    .note { padding: 10px 14px; margin-top: 12px; border-radius: 12px; border: 1px solid var(--border); color: var(--muted); }
-    .right { text-align: right; }
+    .panel-header{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .panel-body{ padding: 12px; }
+
+    textarea{
+      width:100%;
+      min-height: 220px;
+      resize: vertical;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.02);
+      color: var(--fg);
+      border-radius: 10px;
+      padding: 12px 12px 40px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.45;
+      outline: none;
+      caret-color: var(--accent);
+    }
+    textarea:focus{
+      border-color: var(--ring);
+      box-shadow: 0 0 0 2px var(--ring) inset;
+    }
+
+    .bar{
+      display:flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    button, .inline-btn{
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(122,162,255,.25), rgba(122,162,255,.15));
+      color: white;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform .05s ease;
+    }
+    button.secondary{
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    }
+    button:active{ transform: translateY(1px); }
+    .hint{ color: var(--muted); font-size: 12px; margin-left:auto; }
+
+    .controls{
+      display:flex; gap:8px; align-items:center; flex-wrap: wrap;
+    }
+    .pill{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size:12px;
+      color: var(--muted);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    }
+
+    .maker{
+      display: grid;
+      gap: var(--gap);
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 700px){
+      .maker{ grid-template-columns: 1fr 1fr; }
+    }
+    .card{
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      padding: 16px;
+      background:
+        radial-gradient(600px 300px at 80% 0%, rgba(142,240,212,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    }
+    .gh{
+      display:flex; align-items:center; gap:14px;
+    }
+    .gh img{
+      width:64px; height:64px; border-radius:50%;
+      border:1px solid rgba(255,255,255,.2);
+    }
+    .gh .meta{
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .gh a{
+      color: var(--fg);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .gh a:hover{ text-decoration: underline; }
+    .stat{
+      display:inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+
+    footer{
+      margin-top: 30px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .visually-hidden{
+      position:absolute !important; inset:0 !important; width:1px !important; height:1px !important;
+      padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; white-space:nowrap !important; border:0 !important;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1 class="title">Base64 <span>Encoder / Decoder</span></h1>
-      <a class="btn" href="https://developer.mozilla.org/en-US/docs/Glossary/Base64" target="_blank" rel="noreferrer noopener" aria-label="Learn about Base64 on MDN">MDN ↗</a>
+      <div>
+        <div class="title">Base64 Encoder / Decoder</div>
+        <div class="subtitle">UTF‑8 safe • no shadows • soft gradient circles • instant copy</div>
+      </div>
+      <div class="controls" role="group" aria-label="Settings">
+        <span class="pill" id="modeLabel">Mode: Auto</span>
+        <button class="secondary" id="swapBtn" title="Swap inputs">Swap</button>
+        <button class="secondary" id="clearBtn" title="Clear both">Clear</button>
+      </div>
     </header>
 
-    <div class="card" role="region" aria-label="Base64 utility">
-      <div class="toolbar" role="toolbar" aria-label="Actions">
-        <button id="encodeBtn" class="primary" title="Encode text to Base64 (Ctrl+E)">Encode</button>
-        <button id="decodeBtn" class="success" title="Decode Base64 to text (Ctrl+D)">Decode</button>
-        <button id="swapBtn" title="Swap input and output (Ctrl+S)">Swap</button>
-        <button id="clearBtn" class="danger" title="Clear both panes (Esc)">Clear</button>
-        <div class="spacer"></div>
-        <button id="copyOutBtn" title="Copy output (Ctrl+C)">Copy Output</button>
-        <button id="downloadBtn" title="Download output as file">Download</button>
+    <section class="panes" aria-label="Base64 tool">
+      <div class="panel" id="rawPanel">
+        <div class="panel-header">Raw Text</div>
+        <div class="panel-body">
+          <label class="visually-hidden" for="raw">Raw input</label>
+          <textarea id="raw" placeholder="Type or paste text to encode..."></textarea>
+          <div class="bar">
+            <button id="encodeBtn" aria-label="Encode to Base64">Encode →</button>
+            <button class="secondary" id="copyRaw" aria-label="Copy raw text">Copy</button>
+            <span class="hint">UTF‑8 preserved</span>
+          </div>
+        </div>
       </div>
 
-      <div class="grid">
-        <section class="panel" aria-labelledby="inLabel">
-          <label id="inLabel" for="input">Input</label>
-          <textarea id="input" placeholder="Type or paste text here…"></textarea>
-          <div class="hint">Tip: Works with Unicode (emoji, non‑Latin scripts). Encoding uses UTF‑8.</div>
-        </section>
-
-        <section class="panel" aria-labelledby="outLabel">
-          <label id="outLabel" for="output">Output</label>
-          <textarea id="output" placeholder="Result will appear here…"></textarea>
-          <div class="hint right">Read‑only</div>
-        </section>
+      <div class="panel" id="b64Panel">
+        <div class="panel-header">Base64</div>
+        <div class="panel-body">
+          <label class="visually-hidden" for="b64">Base64 input</label>
+          <textarea id="b64" placeholder="Paste Base64 here to decode..."></textarea>
+          <div class="bar">
+            <button id="decodeBtn" aria-label="Decode from Base64">← Decode</button>
+            <button class="secondary" id="copyB64" aria-label="Copy Base64 text">Copy</button>
+            <span class="hint">Validates & shows errors</span>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <div class="footer">
-        <div>Keyboard: <span class="kbd">Ctrl</span>+<span class="kbd">E</span> Encode · <span class="kbd">Ctrl</span>+<span class="kbd">D</span> Decode · <span class="kbd">Ctrl</span>+<span class="kbd">S</span> Swap · <span class="kbd">Esc</span> Clear</div>
-        <div>100% client‑side · No data leaves your browser</div>
+    <!-- Separate GUI: Maker / GitHub card -->
+    <section class="maker" aria-label="About the maker">
+      <div class="card">
+        <div class="gh">
+          <img id="ghAvatar" alt="GitHub avatar of @johannes61" src="" />
+          <div class="meta">
+            <div>Made by <a id="ghLink" href="https://github.com/johannes61" target="_blank" rel="noopener">@johannes61</a></div>
+            <div class="stat" id="ghFollowers">Followers: —</div>
+          </div>
+        </div>
       </div>
-    </div>
+      <div class="card">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="font-weight:700;">What this does</div>
+          <ul style="margin:0; padding-left:18px; color:var(--muted); line-height:1.6;">
+            <li>Encodes/decodes with proper UTF‑8 (no broken emojis/ÅØÆ).</li>
+            <li>Swap, clear, and one‑click copy.</li>
+            <li>Graceful errors for invalid Base64.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-    <p class="note">This tool uses <strong>UTF‑8 safe</strong> Base64 functions under the hood (TextEncoder/TextDecoder). That means your emojis 😊 and non‑Latin text are handled correctly.</p>
+    <footer>Tip: Press <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Enter</kbd> to encode or decode based on focus.</footer>
   </div>
 
   <script>
-    // --- UTF‑8 Safe Base64 Helpers ---
-    // Convert a Uint8Array to Base64
-    function bytesToBase64(bytes) {
-      let binary = "";
-      const len = bytes.byteLength;
-      for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
+    const enc = new TextEncoder();
+    const dec = new TextDecoder();
+
+    function toBase64(str){
+      const bytes = enc.encode(str);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       return btoa(binary);
     }
-    // Convert Base64 to Uint8Array
-    function base64ToBytes(base64) {
-      const binary = atob(base64.replace(/\s+/g, ""));
-      const len = binary.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binary.charCodeAt(i);
+
+    function fromBase64(b64){
+      const clean = b64.trim();
+      if (!/^[A-Za-z0-9+/=\s]*$/.test(clean)) {
+        throw new Error("Invalid Base64 characters detected.");
       }
-      return bytes;
+      const pad = clean.length % 4;
+      const padded = pad ? clean + "=".repeat(4 - pad) : clean;
+
+      let binary;
+      try { binary = atob(padded); }
+      catch (e){ throw new Error("Malformed Base64 input."); }
+
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      try { return dec.decode(bytes); }
+      catch (e){ throw new Error("Decoded bytes are not valid UTF‑8."); }
     }
 
-    function encodeUtf8ToBase64(str) {
-      const encoder = new TextEncoder();
-      const bytes = encoder.encode(str);
-      return bytesToBase64(bytes);
+    const raw = document.getElementById('raw');
+    const b64 = document.getElementById('b64');
+    const encodeBtn = document.getElementById('encodeBtn');
+    const decodeBtn = document.getElementById('decodeBtn');
+    const copyRaw = document.getElementById('copyRaw');
+    const copyB64 = document.getElementById('copyB64');
+    const clearBtn = document.getElementById('clearBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const modeLabel = document.getElementById('modeLabel');
+
+    function flash(el){
+      const old = el.style.outline;
+      el.style.outline = '2px solid var(--ring)';
+      setTimeout(()=>{ el.style.outline = old; }, 200);
     }
 
-    function decodeBase64ToUtf8(b64) {
-      const bytes = base64ToBytes(b64);
-      const decoder = new TextDecoder("utf-8", { fatal: false });
-      return decoder.decode(bytes);
-    }
-
-    // --- UI Wiring ---
-    const inputEl = document.getElementById('input');
-    const outputEl = document.getElementById('output');
-    outputEl.readOnly = false; // allow select & copy, but we won't sync back
-
-    function encodeAction() {
-      try {
-        outputEl.value = encodeUtf8ToBase64(inputEl.value || "");
-      } catch (err) {
-        outputEl.value = `Encoding error: ${err.message}`;
-      }
-    }
-
-    function decodeAction() {
-      try {
-        outputEl.value = decodeBase64ToUtf8(inputEl.value || "");
-      } catch (err) {
-        outputEl.value = `Decoding error: ${err.message}`;
-      }
-    }
-
-    function swapAction() {
-      const a = inputEl.value;
-      inputEl.value = outputEl.value;
-      outputEl.value = a;
-      inputEl.focus();
-    }
-
-    function clearAction() {
-      inputEl.value = '';
-      outputEl.value = '';
-      inputEl.focus();
-    }
-
-    function copyOutput() {
-      if (!outputEl.value) return;
-      navigator.clipboard.writeText(outputEl.value).then(() => {
-        flash(outputEl, 'Copied!');
-      }).catch(() => {
-        outputEl.select();
-        document.execCommand('copy');
-        flash(outputEl, 'Copied!');
-      });
-    }
-
-    function downloadOutput() {
-      const blob = new Blob([outputEl.value || ''], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'base64-output.txt';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function flash(el, msg) {
-      const oldTitle = document.title;
-      document.title = msg + ' · ' + oldTitle;
-      setTimeout(() => (document.title = oldTitle), 800);
-    }
-
-    // Buttons
-    document.getElementById('encodeBtn').addEventListener('click', encodeAction);
-    document.getElementById('decodeBtn').addEventListener('click', decodeAction);
-    document.getElementById('swapBtn').addEventListener('click', swapAction);
-    document.getElementById('clearBtn').addEventListener('click', clearAction);
-    document.getElementById('copyOutBtn').addEventListener('click', copyOutput);
-    document.getElementById('downloadBtn').addEventListener('click', downloadOutput);
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 'e') { e.preventDefault(); encodeAction(); }
-      if (e.ctrlKey && e.key.toLowerCase() === 'd') { e.preventDefault(); decodeAction(); }
-      if (e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); swapAction(); }
-      if (e.key === 'Escape') { e.preventDefault(); clearAction(); }
+    encodeBtn.addEventListener('click', () => {
+      b64.value = toBase64(raw.value);
+      flash(b64);
+      modeLabel.textContent = 'Mode: Encode';
     });
 
-    // Autofocus
-    inputEl.focus();
+    decodeBtn.addEventListener('click', () => {
+      try{
+        raw.value = fromBase64(b64.value);
+        flash(raw);
+        modeLabel.textContent = 'Mode: Decode';
+      }catch(err){
+        alert(err.message);
+      }
+    });
+
+    copyRaw.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(raw.value); flash(raw); }
+      catch { alert('Clipboard blocked by browser.'); }
+    });
+
+    copyB64.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(b64.value); flash(b64); }
+      catch { alert('Clipboard blocked by browser.'); }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      raw.value = ''; b64.value = '';
+      modeLabel.textContent = 'Mode: Auto';
+    });
+
+    swapBtn.addEventListener('click', () => {
+      const tmp = raw.value;
+      raw.value = b64.value;
+      b64.value = tmp;
+      flash(raw); flash(b64);
+    });
+
+    // Keyboard shortcut: Ctrl/Cmd+Enter → encode/decode based on focus
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (document.activeElement === raw) encodeBtn.click();
+        else if (document.activeElement === b64) decodeBtn.click();
+      }
+    });
+
+    const ghAvatar = document.getElementById('ghAvatar');
+    const ghFollowers = document.getElementById('ghFollowers');
+    const ghLink = document.getElementById('ghLink');
+
+    async function loadGitHub(){
+      try{
+        const r = await fetch('https://api.github.com/users/johannes61', {
+          headers: { 'Accept': 'application/vnd.github+json' }
+        });
+        if (!r.ok) throw new Error('GitHub rate limit or user not found.');
+        const data = await r.json();
+        ghAvatar.src = data.avatar_url;
+        ghFollowers.textContent = `Followers: ${data.followers?.toLocaleString?.() ?? data.followers}`;
+        ghLink.href = data.html_url || ghLink.href;
+      }catch(e){
+        ghAvatar.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%23222"/><text x="50%" y="54%" font-size="10" text-anchor="middle" fill="white">GH</text></svg>';
+        ghFollowers.textContent = 'Followers: unavailable';
+        console.warn(e);
+      }
+    }
+    loadGitHub();
   </script>
 </body>
 </html>
